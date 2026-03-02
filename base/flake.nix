@@ -18,6 +18,9 @@
         modules = [
           ./configuration.nix
           lanzaboote.nixosModules.lanzaboote
+          ../modules/secureboot.nix
+          ../modules/zsh.nix
+          ../modules/openssh.nix
         ];
       };
 

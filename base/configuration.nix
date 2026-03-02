@@ -3,9 +3,6 @@
 {
   imports = [
     ./hardware-configuration.nix
-    ./modules/secureboot.nix
-    ./modules/zsh.nix
-    ./modules/openssh.nix
   ];
 
   # Define your hostname.
