@@ -1,7 +1,10 @@
 { config, lib, pkgs, ... }:
 
 {
-  import = [ ./hardware-configuration.nix ];
+  imports = [
+    ./hardware-configuration.nix
+    ../modules/zsh.nix
+  ];
 
   fileSystems = {
     "/boot" = lib.mkForce {
@@ -20,8 +23,6 @@
   time.timeZone = "Europe/Rome";
   i18n.defaultLocale = "en_US.UTF-8";
   console = {};
-
-  # TODO: For all users (aslo root) use zsh.
 
 
 
