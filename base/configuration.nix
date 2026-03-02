@@ -3,7 +3,9 @@
 {
   imports = [
     ./hardware-configuration.nix
-    ../modules/zsh.nix
+    ./modules/secureboot.nix
+    ./modules/zsh.nix
+    ./modules/openssh.nix
   ];
 
   # Define your hostname.
@@ -24,9 +26,12 @@
 
   swapDevices = [{ device = "/dev/disk/by-label/NIXSWAP"; }];
 
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
   boot = {
     kernelPackages = pkgs.linuxPackages_latest;  # Use latest kernel.
     initrd = {
+      systemd.enable   = true;   # required for services.lvm and crypttabExtraOpts
       services.lvm.enable = true;
       kernelModules = [ "dm-snapshot" "cryptd" ];
       luks.devices."cryptroot" = {
@@ -52,6 +57,11 @@
     # Uncomment exactly one layout:
     keyMap = "us-acentos";   # US with dead keys  →  è à ù ì ò …
     # keyMap = "it";         # Italian
+  };
+
+  users.users.demon0 = {
+    isNormalUser = true;
+    extraGroups = [ "wheel" "networkmanager" ]; # Enable ‘sudo’ for the user.
   };
 
 
