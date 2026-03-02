@@ -27,13 +27,13 @@
       "ALWAYS_TO_END"          # move cursor to end after completion
     ];
 
-    plugins = [
-      {
-        # Up/down arrows search history by current prefix
-        name = "zsh-history-substring-search";
-        src  = "${pkgs.zsh-history-substring-search}/share/zsh-history-substring-search";
-      }
-    ];
+    # plugins = [
+    #   {
+    #     # Up/down arrows search history by current prefix
+    #     name = "zsh-history-substring-search";
+    #     src  = "${pkgs.zsh-history-substring-search}/share/zsh-history-substring-search";
+    #   }
+    # ];
 
     shellAliases = {
       # ----------------------------------------------------------
@@ -84,6 +84,9 @@
     };
 
     interactiveShellInit = ''
+      # History substring search plugin (programs.zsh.plugins is home-manager only)
+      source ${pkgs.zsh-history-substring-search}/share/zsh-history-substring-search/zsh-history-substring-search.zsh
+
       # History substring search — bind to arrow keys
       bindkey '^[[A' history-substring-search-up
       bindkey '^[[B' history-substring-search-down
