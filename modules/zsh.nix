@@ -1,19 +1,18 @@
-# modules/zsh.nix — base zsh shell environment
 { config, lib, pkgs, ... }:
 
 {
-  # ============================================================
-  # ZSH — System shell
-  # ============================================================
   users.defaultUserShell    = pkgs.zsh;
   users.users.root.shell    = pkgs.zsh; # defaultUserShell does not apply to root
 
   programs.zsh = {
     enable = true;
 
-    # Built-in NixOS plugin wrappers
+    # autosuggestions is safe to enable via the NixOS wrapper.
+    # syntaxHighlighting is intentionally disabled here — it is sourced manually
+    # in interactiveShellInit to enforce the required load order:
+    #   autosuggestions → syntax-highlighting → history-substring-search
     autosuggestions.enable = true;
-    syntaxHighlighting.enable = true;
+    syntaxHighlighting.enable = false;
 
     histSize = 10000;
 
@@ -36,9 +35,7 @@
     # ];
 
     shellAliases = {
-      # ----------------------------------------------------------
       # Navigation
-      # ----------------------------------------------------------
       ls    = "eza";
       ll    = "eza -lh --git";
       la    = "eza -lah --git";
@@ -50,9 +47,7 @@
       cp     = "cp -i";
       mv     = "mv -i";
 
-      # ----------------------------------------------------------
       # Git
-      # ----------------------------------------------------------
       g    = "git";
       gs   = "git status";
       ga   = "git add";
@@ -70,9 +65,7 @@
       gst  = "git stash";
       gsp  = "git stash pop";
 
-      # ----------------------------------------------------------
       # Nix / NixOS
-      # ----------------------------------------------------------
       nrs  = "sudo nixos-rebuild switch --flake /etc/nixos#nixos";
       nrb  = "sudo nixos-rebuild boot   --flake /etc/nixos#nixos";
       nrt  = "sudo nixos-rebuild test   --flake /etc/nixos#nixos";
@@ -84,7 +77,10 @@
     };
 
     interactiveShellInit = ''
-      # History substring search plugin (programs.zsh.plugins is home-manager only)
+      # Load order: syntax-highlighting must precede history-substring-search,
+      # otherwise history-substring-search's ZLE widget wrapping breaks.
+      # autosuggestions is already sourced earlier by its NixOS wrapper.
+      source ${pkgs.zsh-syntax-highlighting}/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
       source ${pkgs.zsh-history-substring-search}/share/zsh-history-substring-search/zsh-history-substring-search.zsh
 
       # History substring search — bind to arrow keys
@@ -104,6 +100,7 @@
       #   Ctrl+T  fuzzy-find file and paste to command line
       #   Ctrl+R  fuzzy search command history
       #   Alt+C   fuzzy cd into subdirectory
+      export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border=none'
       source ${pkgs.fzf}/share/fzf/completion.zsh
       source ${pkgs.fzf}/share/fzf/key-bindings.zsh
 
@@ -121,9 +118,7 @@
     '';
   };
 
-  # ============================================================
-  # STARSHIP — cross-shell prompt
-  # ============================================================
+  # Starship — cross-shell prompt.
   programs.starship = {
     enable   = true;
     settings = {
@@ -184,15 +179,13 @@
       };
 
       character = {
-        success_symbol = "[❯](bold green)";
-        error_symbol   = "[❯](bold red)";
+        success_symbol = "[$](bold green)";
+        error_symbol   = "[$](bold red)";
       };
     };
   };
 
-  # ============================================================
-  # FONTS — Nerd Fonts
-  # ============================================================
+  # Nerd Fonts for terminal icon/glyph support.
   fonts = {
     packages = with pkgs.nerd-fonts; [
       caskaydia-cove   # Cascadia Code with Nerd Font glyphs
