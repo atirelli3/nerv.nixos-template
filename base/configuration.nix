@@ -5,10 +5,12 @@
     ./hardware-configuration.nix
   ];
 
-  # Define your hostname.
-  networking.hostName = "nixos-base";
-  networking.networkmanager.enable = true;
+  networking = {
+    hostName = "nixos-base";
+    networkmanager.enable = true;
+  };
 
+  # lib.mkForce overrides the Disko-generated mounts — keep labels in sync with disko-configuration.nix.
   fileSystems = {
     "/boot" = lib.mkForce {
       device = "/dev/disk/by-label/NIXBOOT";
@@ -23,22 +25,20 @@
 
   swapDevices = [{ device = "/dev/disk/by-label/NIXSWAP"; }];
 
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
-
   boot = {
-    kernelPackages = pkgs.linuxPackages_latest;  # Use latest kernel.
+    kernelPackages = pkgs.linuxPackages_latest;
     initrd = {
       systemd.enable   = true;   # required for services.lvm and crypttabExtraOpts
       services.lvm.enable = true;
-      kernelModules = [ "dm-snapshot" "cryptd" ];
+      kernelModules = [ "dm-snapshot" "cryptd" ];  # LVM-on-LUKS snapshots and async dm-crypt
       luks.devices."cryptroot" = {
-        device = "/dev/disk/by-label/NIXLUKS";  # Define our LUKS device
+        device = "/dev/disk/by-label/NIXLUKS";
         preLVM = true;
-        allowDiscards = true;
+        allowDiscards = true;  # TRIM pass-through for SSDs
       };
     };
     loader = {
-      systemd-boot.enable = true;  # Use the systemd-boot EFI boot loader.
+      systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;
     };
   };
@@ -58,10 +58,8 @@
 
   users.users.demon0 = {
     isNormalUser = true;
-    extraGroups = [ "wheel" "networkmanager" ]; # Enable ‘sudo’ for the user.
+    extraGroups = [ "wheel" "networkmanager" ];
   };
-
-
 
   system.stateVersion = "25.11";
 }
