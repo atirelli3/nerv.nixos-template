@@ -6,7 +6,7 @@ let
     destination = "/bin/luks-cryptenroll";
     executable = true;
 
-    # Note: You can hardcode additional LUKS devices like so:
+    # To enroll additional LUKS devices, extend the script like so:
     # text = let
     #   ...
     #   luksDevice02 = "BEEGLUKS01";
@@ -26,37 +26,29 @@ let
 in
 
 {
-  # Lanzaboote currently replaces the systemd-boot module.
-  # This setting is usually set to true in configuration.nix
-  # generated at installation time. So we force it to false
-  # for now.
+  # Lanzaboote supersedes systemd-boot; the NixOS-generated entry must be disabled.
   boot.loader.systemd-boot.enable = lib.mkForce false;
+  # Configure the initrd LUKS unlock to use TPM2 bound to PCRs 0+7.
   boot.initrd.luks.devices."cryptroot".crypttabExtraOpts = [ "tpm2-device=auto" "tpm2-pcrs=0+7" ];
   boot.lanzaboote = {
     enable = true;
     pkiBundle = "/var/lib/sbctl";
   };
 
+  # TPM2 — required for LUKS auto-unlock sealed to Secure Boot state (PCR 7).
   security.tpm2 = {
     enable = true;
     pkcs11.enable = true;
     tctiEnvironment.enable = true;
   };
 
-  # ============================================================
-  # FIRST-BOOT — two-step setup split across two reboots.
-  #
-  # Why two steps?
-  # PCR 7 measures the Secure Boot policy (enrolled keys). Enrolling
-  # SB keys changes PCR 7 on the NEXT boot, not the current one.
-  # Binding LUKS to TPM2 in the same boot as key enrollment would
-  # capture the wrong PCR 7 value, causing TPM2 to refuse auto-unlock
-  # after reboot. The split ensures TPM2 is bound when PCR 7 already
-  # reflects the active Secure Boot state.
-  #
-  # Boot 1 — enroll Secure Boot keys → automatic reboot
-  # Boot 2 — bind LUKS to TPM2 (PCR 7 now correct)
-  # ============================================================
+  # First-boot setup runs across two reboots.
+  # PCR 7 measures the Secure Boot policy; enrolling keys changes it on the NEXT boot.
+  # Binding LUKS to TPM2 in the same boot as key enrollment would capture the wrong
+  # PCR 7 value, causing TPM2 to refuse auto-unlock. The split ensures TPM2 is bound
+  # when PCR 7 already reflects the active Secure Boot state.
+  #   Boot 1 — enroll Secure Boot keys → automatic reboot
+  #   Boot 2 — bind LUKS to TPM2 (PCR 7 now correct)
 
   # Boot 1: enroll Secure Boot keys, then reboot automatically.
   systemd.services.secureboot-enroll-keys = {
@@ -138,6 +130,7 @@ in
     '';
   };
 
+  # Re-enrollment helper and Secure Boot / TPM2 management tools.
   environment.systemPackages = [
     luks-cryptenroll
     pkgs.sbctl
